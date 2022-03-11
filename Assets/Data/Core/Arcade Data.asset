@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b10862c43a8cd404eaa31d3269631737, type: 3}
+  m_Name: Arcade Data
+  m_EditorClassIdentifier: 
+  CurrentResources:
+  - {fileID: 11400000, guid: 2d6aae18e32bf4e8690f2da27b629c5a, type: 2}
+  - {fileID: 11400000, guid: 59ad4a3587a6f4a93b65cae120c77163, type: 2}
+  - {fileID: 11400000, guid: 891e193b9621c439aad701c9a716d6f7, type: 2}
+  - {fileID: 11400000, guid: 2d141d4ca44294da6bbdc9eaea6505f9, type: 2}
+  - {fileID: 11400000, guid: 3f14fc7276d02484f82b53efe2c3fe5e, type: 2}
+  ResourceToCoinMultiply: 4
