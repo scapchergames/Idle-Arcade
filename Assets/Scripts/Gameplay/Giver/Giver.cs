@@ -1,65 +1,110 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using RengeGames.HealthBars;
+using UnityEngine.Events;
+
 using TMPro;
+using DG.Tweening;
+using Sirenix.OdinInspector;
+
+using RengeGames.HealthBars;
 
 public class Giver : MonoBehaviour
 {
-    [Header("Giver")]
-    public CollectableType collectableType;
-    public GiverType giverType;
+    [Title("Giver")]
+    [EnumToggleButtons]
+    public ResourceType collectableType;
+    [EnumToggleButtons]
+    public ResourceType giverType;
 
+    [Space(20)]
+    public bool showProperties;
+
+    [Space(20)]
+    public FloatVariable GenerationSpeed;
+
+    [Space(20)]
+    public GiverPrefabs_Data giverPrefabs;
     public GameObject GiftPrefab;
     public Transform GiftParent;
 
-    public IntVariable xCount;
-    public IntVariable yCount;
-    public IntVariable zCount;
+    [Space(20)]
 
-    public FloatVariable GenerationSpeed;
+    [ReadOnly, ShowIf("showProperties")]
+    public int MaxGiftCount;
+    [ReadOnly, ShowIf("showProperties")]
+    public int CurrentGiftCount;
 
+    [Space(20)]
+    [ReadOnly, ShowIf("showProperties")]
+    public List<GameObject> GiftList = new List<GameObject>();
+
+    // Custom Givers
+    [Space(20)]
+    [ShowIf("giverType", ResourceType.Type1)]
     public Vector3Variable Offset;
-
     float zOffset;
     float _x, _y, _z;
     int CurrentXPos;
 
-    int MaxGiftCount;
-    int CurrentGiftCount;
-    public List<GameObject> GiftList = new List<GameObject>();
+    [ShowIf("giverType", ResourceType.Type1)]
+    public IntVariable xCount, yCount, zCount;
     List<Vector3> posList = new List<Vector3>();
 
-    bool generationCompleted = false;
-
-    PurchasableItem PurchasableItem;
-
+    [ShowIf("giverType", ResourceType.Type2)]
+    [Space(20)]
     public List<Transform> SpesificPositionsList = new List<Transform>();
 
+    [ShowIf("giverType", ResourceType.Type2)]
+    public bool isGeneratingWithResource = false;
+
+    [Space(20)]
+    [ShowIf("giverType", ResourceType.Type3)]
     public TextMeshProUGUI countText;
+    [ShowIf("giverType", ResourceType.Type3)]
     public UltimateCircularHealthBar hb;
 
-    // [ShowOnly]
-    public GameObject CurrentPlayer;
-    public ObjectTrigger ObjectTrigger;
-
+    // Default
+    [Space(20)]
+    [ReadOnly, ShowIf("showProperties")]
+    public bool generationCompleted = false;
+    [ReadOnly, ShowIf("showProperties")]
     public bool startGiving = false;
+    [ReadOnly, ShowIf("showProperties")]
     public float currentGenerationTime;
+    [ReadOnly, ShowIf("showProperties")] // not necessary, fix it, CurrentGiftCount'a çevrilebilir gibi
+    public int totalGiftCount;
+
+    // [ShowOnly]
+    [Space(20)]
+    [ReadOnly, ShowIf("showProperties")]
+    public PurchasableItem PurchasableItem;
+    [ReadOnly, ShowIf("showProperties")]
+    public ObjectTrigger ObjectTrigger;
+    [ReadOnly, ShowIf("showProperties")]
+    public GameObject CurrentPlayer;
+
+    [Space(20)]
+    [ShowIf("giverType", ResourceType.Type2)]
+    public bool withAnimation = false;
+    [ShowIf("giverType", ResourceType.Type2)]
+    public Transform AnimateParent;
+
+    [Space(20)]
+    public UnityEvent OnCollectedResource;
 
     private GameObject _newGift;
 
-    public int totalGiftCount;
-
-    public bool isGeneratingWithResource = false;
-
     private void Start()
     {
-        if(giverType == GiverType.Type1 || giverType == GiverType.Type2)
+        GiftPrefab = ReturnGiverPrefab();
+
+        if(giverType == ResourceType.Type1 || giverType == ResourceType.Type2)
             PurchasableItem = GetComponent<PurchasableItem>();
 
         ObjectTrigger = GetComponent<ObjectTrigger>();
 
-        if (giverType == GiverType.Type1)
+        if (giverType == ResourceType.Type1)
         {
             MaxGiftCount = (int)(xCount.Value * zCount.Value) * yCount.Value;
             zOffset = Offset.Value.z * 3f;
@@ -69,16 +114,47 @@ public class Giver : MonoBehaviour
                 posList.Add(_pos);
             }
         }
-        else if (giverType == GiverType.Type2 || giverType == GiverType.Type3)
+        else if (giverType == ResourceType.Type2 || giverType == ResourceType.Type3)
         {
             MaxGiftCount = SpesificPositionsList.Count;
         }
+
+        if (giverType == ResourceType.Type3)
+            DisableCounterGUI();
+    }
+
+    public GameObject ReturnGiverPrefab()
+    {
+        GameObject _currentGiverPrefab = giverPrefabs.Prefabs[1].Value;
+
+        if (collectableType == ResourceType.Type1)
+        {
+            _currentGiverPrefab = giverPrefabs.Prefabs[1].Value;
+        }
+        else if (collectableType == ResourceType.Type2)
+        {
+            _currentGiverPrefab = giverPrefabs.Prefabs[2].Value;
+        }
+        else if (collectableType == ResourceType.Type3)
+        {
+            _currentGiverPrefab = giverPrefabs.Prefabs[3].Value;
+        }
+        else if (collectableType == ResourceType.Type4)
+        {
+            _currentGiverPrefab = giverPrefabs.Prefabs[4].Value;
+        }
+        else if (collectableType == ResourceType.Type0)
+        {
+            _currentGiverPrefab = giverPrefabs.Prefabs[0].Value;
+        }
+
+        return _currentGiverPrefab;
     }
 
     // just giver not purchasable
     private void Update()
     {
-        if (giverType == GiverType.Type3 && startGiving)
+        if (giverType == ResourceType.Type3 && startGiving)
         {
             currentGenerationTime += 0.01f;
             hb.SetPercent(currentGenerationTime);
@@ -86,10 +162,34 @@ public class Giver : MonoBehaviour
             if (currentGenerationTime >= GenerationSpeed.Value)
             {
                 totalGiftCount++;
+
                 countText.text = totalGiftCount + "/5";
 
                 if (totalGiftCount == 5)
                     startGiving = false;
+
+                /*
+                if (CurrentPlayer == null)
+                {
+                    countText.text = totalGiftCount + "/5";
+
+                    if (totalGiftCount == 4)
+                    {
+                        startGiving = false;
+                    }
+                }
+                else if (CurrentPlayer != null)
+                {
+                    countText.text = CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value + "/5";
+
+                    Debug.Log(CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value + "");
+
+                    if (CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value == 4)
+                    {
+                        startGiving = false;
+                    }
+                }
+                */
 
                 currentGenerationTime = 0f;
                 GiftGenerate();
@@ -130,16 +230,31 @@ public class Giver : MonoBehaviour
     public void SetCurrentPlayer()
     {
         CurrentPlayer = ObjectTrigger.triggeredObject;
+        /*
+        if (giverType == ResourceType.Type3)
+        {
+            if (CurrentPlayer != null)
+                countText.text = CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value + "/5";
+        }
+        */
+    }
+
+    public void OnPlayerResourceDataChanged(int _amount)
+    {
+        if (giverType == ResourceType.Type3)
+        {
+            countText.text = _amount + "/5";
+        }
     }
 
     // OnPurchased or OnTriggerEnter
     public void GiftGenerate()
     {
-        if (giverType == GiverType.Type1)
+        if (giverType == ResourceType.Type1)
         {
             StartCoroutine(DelayedGiftGenerate());
         }
-        else if (giverType == GiverType.Type2 || giverType == GiverType.Type3)
+        else if (giverType == ResourceType.Type2 || giverType == ResourceType.Type3)
         {
             StartCoroutine(DelayedGiftGenerateOnSpesificPositions());
         }
@@ -148,8 +263,32 @@ public class Giver : MonoBehaviour
     // OnStay or OnEnter
     public void GiveGift()
     {
-        if (giverType == GiverType.Type3)
+        if (giverType == ResourceType.Type3)
         {
+            /*
+            if(CurrentPlayer != null)
+                countText.text = CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value + "/5";
+            */
+
+            EnableCounterGUI();
+
+            /*
+            if (CurrentPlayer == null)
+            {
+                if (totalGiftCount < 4)
+                {
+                    startGiving = true;
+                }
+            }
+            else if (CurrentPlayer != null)
+            {
+                if (CurrentPlayer.GetComponent<PlayerCollectable>().CurrentCollectedCounts[3].Value < 4)
+                {
+                    startGiving = true;
+                }
+            }
+            */
+
             if (totalGiftCount < 5)
             {
                 startGiving = true;
@@ -205,30 +344,41 @@ public class Giver : MonoBehaviour
 
     public IEnumerator DelayedGiftGenerateOnSpesificPositions()
     {
-        yield return new WaitForSeconds(0.25f);
+        if (CurrentGiftCount < MaxGiftCount || giverType == ResourceType.Type3)
+        {
+            yield return new WaitForSeconds(0.25f);
 
-        if (giverType == GiverType.Type2)
-        {
-            _newGift = Instantiate(GiftPrefab, SpesificPositionsList[GiftList.Count].position, Quaternion.identity, GiftParent);
-        }
-        else if(giverType == GiverType.Type3)
-        {
-            _newGift = Instantiate(GiftPrefab, SpesificPositionsList[0].position, Quaternion.identity, GiftParent);
-        }
-        GiftList.Add(_newGift);
-        CurrentGiftCount = GiftList.Count;
+            if (giverType == ResourceType.Type2)
+            {
+                if (withAnimation)
+                {
+                    _newGift = Instantiate(GiftPrefab, AnimateParent.position, Quaternion.identity, GiftParent);
+                    _newGift.transform.DOMove(SpesificPositionsList[GiftList.Count].position, 0.5f);
+                }
+                else
+                {
+                    _newGift = Instantiate(GiftPrefab, SpesificPositionsList[GiftList.Count].position, Quaternion.identity, GiftParent);
+                }
+            }
+            else if (giverType == ResourceType.Type3)
+            {
+                _newGift = Instantiate(GiftPrefab, SpesificPositionsList[0].position, Quaternion.identity, GiftParent);
+            }
+            GiftList.Add(_newGift);
+            CurrentGiftCount = GiftList.Count;
 
-        if (giverType == GiverType.Type3)
-            CollectGiftWithWait();
+            if (giverType == ResourceType.Type3)
+                CollectGiftWithWait();
 
-        if (GiftList.Count < MaxGiftCount && !isGeneratingWithResource)
-        {
-            if(giverType != GiverType.Type3)
-            StartCoroutine(DelayedGiftGenerateOnSpesificPositions());
-        }
-        else
-        {
-            generationCompleted = true;
+            if (GiftList.Count < MaxGiftCount && !isGeneratingWithResource)
+            {
+                if (giverType != ResourceType.Type3)
+                    StartCoroutine(DelayedGiftGenerateOnSpesificPositions());
+            }
+            else
+            {
+                generationCompleted = true;
+            }
         }
     }
 
@@ -243,8 +393,10 @@ public class Giver : MonoBehaviour
             GiftList.Remove(_collectedGift);
             Destroy(_collectedGift);
 
+            CurrentGiftCount = GiftList.Count;
+
             // think
-            if (giverType == GiverType.Type1)
+            if (giverType == ResourceType.Type1)
             {
                 if (CurrentXPos > 0)
                     CurrentXPos--;
@@ -257,6 +409,8 @@ public class Giver : MonoBehaviour
                 if(!isGeneratingWithResource)
                     GiftGenerate();
             }
+
+            OnCollectedResource.Invoke();
         }
     }
 
@@ -270,9 +424,31 @@ public class Giver : MonoBehaviour
 
     public void OnExit()
     {
+        if (giverType == ResourceType.Type3)
+            DisableCounterGUI();
+
         StopCoroutine(DelayedGiftGenerateOnSpesificPositions());
 
         startGiving = false;
         currentGenerationTime = 0f;
     }
+
+    #region GUI
+    public GameObject Canvas;
+    public void InitializeGUI()
+    {
+
+    }
+
+    public void EnableCounterGUI()
+    {
+        Canvas.SetActive(true);
+        Canvas.transform.DOScale(Vector3.one, 0.5f);
+    }
+
+    public void DisableCounterGUI()
+    {
+        Canvas.transform.DOScale(Vector3.zero, 0.5f).OnComplete(() => Canvas.SetActive(false));
+    }
+    #endregion GUI
 }

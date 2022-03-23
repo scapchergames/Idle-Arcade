@@ -1,8 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
 using System;
+
+using TMPro;
+using DG.Tweening;
+using Sirenix.OdinInspector;
 
 public class PlayerCollectable : MonoBehaviour
 {
@@ -31,7 +34,12 @@ public class PlayerCollectable : MonoBehaviour
     public IntVariable[] CurrentCollectedCounts;
     public IntVariable MaxCollectableCount;
 
-    public void Collect(Vector3 _collectedItemPosition, CollectableType _collectableType)
+    public PurchasableItem currentPurchaseItem;
+
+    public Giver currentGiver;
+    public Taker currentTaker;
+
+    public void Collect(Vector3 _collectedItemPosition, ResourceType _collectableType)
     {
         if (ReturnCurrentCollectedCount(_collectableType).Value < MaxCollectableCount.Value)
         {
@@ -45,31 +53,38 @@ public class PlayerCollectable : MonoBehaviour
 
             _newCollected.transform.DOLocalMove(new Vector3(0f, ReturnYPosition(), CollectedItemZPosition.Value), collectMoveDuration.Value)
                                    .OnComplete(() => SetStraight(_newCollected));
+
+            /*
+            if (currentGiver != null)
+            {
+                currentGiver.OnPlayerResourceDataChanged(ReturnCurrentCollectedCount(_collectableType).Value);
+            }
+            */
         }
     }
 
     #region Returns
-    public int ReturnResourceIndex(CollectableType _collectableType)
+    public int ReturnResourceIndex(ResourceType _collectableType)
     {
         int _currentResourceIndex = 0;
 
-        if (_collectableType == CollectableType.Type1)
+        if (_collectableType == ResourceType.Type1)
         {
             _currentResourceIndex = 1;
         }
-        else if (_collectableType == CollectableType.Type2)
+        else if (_collectableType == ResourceType.Type2)
         {
             _currentResourceIndex = 2;
         }
-        else if (_collectableType == CollectableType.Type3)
+        else if (_collectableType == ResourceType.Type3)
         {
             _currentResourceIndex = 3;
         }
-        else if (_collectableType == CollectableType.Type4)
+        else if (_collectableType == ResourceType.Type4)
         {
             _currentResourceIndex = 4;
         }
-        else if (_collectableType == CollectableType.Coin)
+        else if (_collectableType == ResourceType.Type0)
         {
             _currentResourceIndex = 0;
         }
@@ -77,27 +92,27 @@ public class PlayerCollectable : MonoBehaviour
         return _currentResourceIndex;
     }
 
-    public IntVariable ReturnCurrentCollectedCount(CollectableType _collectableType)
+    public IntVariable ReturnCurrentCollectedCount(ResourceType _collectableType)
     {
         IntVariable _currentCollectedCount = CurrentCollectedCounts[0];
 
-        if (_collectableType == CollectableType.Type1)
+        if (_collectableType == ResourceType.Type1)
         {
             _currentCollectedCount = CurrentCollectedCounts[1];
         }
-        else if (_collectableType == CollectableType.Type2)
+        else if (_collectableType == ResourceType.Type2)
         {
             _currentCollectedCount = CurrentCollectedCounts[2];
         }
-        else if (_collectableType == CollectableType.Type3)
+        else if (_collectableType == ResourceType.Type3)
         {
             _currentCollectedCount = CurrentCollectedCounts[3];
         }
-        else if (_collectableType == CollectableType.Type4)
+        else if (_collectableType == ResourceType.Type4)
         {
             _currentCollectedCount = CurrentCollectedCounts[4];
         }
-        else if (_collectableType == CollectableType.Coin)
+        else if (_collectableType == ResourceType.Type0)
         {
             _currentCollectedCount = CurrentCollectedCounts[0];
         }
@@ -105,27 +120,27 @@ public class PlayerCollectable : MonoBehaviour
         return _currentCollectedCount;
     }
 
-    public GameObject ReturnCollectPrefab(CollectableType _collectableType)
+    public GameObject ReturnCollectPrefab(ResourceType _collectableType)
     {
         GameObject _targetResource = ResourcePrefabs[0].Value;
 
-        if (_collectableType == CollectableType.Type1)
+        if (_collectableType == ResourceType.Type1)
         {
             _targetResource = ResourcePrefabs[1].Value;
         }
-        else if (_collectableType == CollectableType.Type2)
+        else if (_collectableType == ResourceType.Type2)
         {
             _targetResource = ResourcePrefabs[2].Value;
         }
-        else if (_collectableType == CollectableType.Type3)
+        else if (_collectableType == ResourceType.Type3)
         {
             _targetResource = ResourcePrefabs[3].Value;
         }
-        else if (_collectableType == CollectableType.Type4)
+        else if (_collectableType == ResourceType.Type4)
         {
             _targetResource = ResourcePrefabs[4].Value;
         }
-        else if (_collectableType == CollectableType.Coin)
+        else if (_collectableType == ResourceType.Type0)
         {
             _targetResource = ResourcePrefabs[0].Value;
         }
@@ -151,14 +166,13 @@ public class PlayerCollectable : MonoBehaviour
     #endregion Collect
 
     #region Purchase
-    public PurchasableItem currentPurchaseItem;
-    public void Purchase(PurchasableType _purchasableType, Vector3 _targetPosition, int _price, PurchasableItem item)
+    public void Purchase(ResourceType _purchasableType, Vector3 _targetPosition, int _price, PurchasableItem item)
     {
         currentPurchaseItem = item;
         StartCoroutine(DelayedPurchase(_purchasableType, _targetPosition, _price));
     }
 
-    public IEnumerator DelayedPurchase(PurchasableType _purchasableType, Vector3 _targetPosition, int _price)
+    public IEnumerator DelayedPurchase(ResourceType _purchasableType, Vector3 _targetPosition, int _price)
     {
         int targetStop = (CurrentCollectedCounts[ReturnPurchaseTypeIndex(_purchasableType)].Value - _price) - 1;
 
@@ -171,12 +185,12 @@ public class PlayerCollectable : MonoBehaviour
 
             TotalCollectedCount--;
 
-            ArcadeManager.Instance.DecreaseResource(1, CollectableType.Type1);
+            ArcadeManager.Instance.DecreaseResource(1, _purchasableType);
 
             currentPurchaseItem.DecreasePrice();
 
-            GameObject _item = CollectedList[1].objects[i];
-            CollectedList[1].objects.Remove(_item);
+            GameObject _item = CollectedList[ReturnPurchaseTypeIndex(_purchasableType)].objects[i];
+            CollectedList[ReturnPurchaseTypeIndex(_purchasableType)].objects.Remove(_item);
 
             _item.transform.parent = null;
             _item.transform.DOMove(_targetPosition, collectMoveDuration.Value).OnComplete(() => Destroy(_item));
@@ -206,27 +220,27 @@ public class PlayerCollectable : MonoBehaviour
         }
     }
 
-    public int ReturnPurchaseTypeIndex(PurchasableType _purchasableType)
+    public int ReturnPurchaseTypeIndex(ResourceType _purchasableType)
     {
         int _currentResourceIndex = 0;
 
-        if (_purchasableType == PurchasableType.Type1)
+        if (_purchasableType == ResourceType.Type0)
         {
             _currentResourceIndex = 0;
         }
-        else if (_purchasableType == PurchasableType.Type2)
+        else if (_purchasableType == ResourceType.Type1)
         {
             _currentResourceIndex = 1;
         }
-        else if (_purchasableType == PurchasableType.Type3)
+        else if (_purchasableType == ResourceType.Type2)
         {
             _currentResourceIndex = 2;
         }
-        else if (_purchasableType == PurchasableType.Type4)
+        else if (_purchasableType == ResourceType.Type3)
         {
             _currentResourceIndex = 3;
         }
-        else if (_purchasableType == PurchasableType.Type5)
+        else if (_purchasableType == ResourceType.Type4)
         {
             _currentResourceIndex = 4;
         }
@@ -236,16 +250,13 @@ public class PlayerCollectable : MonoBehaviour
     #endregion Purchase
 
     #region Give
-    public Giver currentGiver;
-    public Taker currentTaker;
-
-    public void Give(Taker _taker, Vector3 _targetPosition, int _amount, TakerType _takerType, Transform _takerParent)
+    public void Give(Taker _taker, Vector3 _targetPosition, int _amount, ResourceType _takerType, Transform _takerParent)
     {
         currentTaker = _taker;
         StartCoroutine(DelayedGive(_targetPosition, _amount, _takerType, _takerParent));
     }
 
-    public IEnumerator DelayedGive(Vector3 _targetPosition, int _amount, TakerType _takerType, Transform _takerParent)
+    public IEnumerator DelayedGive(Vector3 _targetPosition, int _amount, ResourceType _takerType, Transform _takerParent)
     {
         int targetStop = (CurrentCollectedCounts[ReturnTakerTypeIndex(_takerType)].Value - _amount) - 1;
 
@@ -258,7 +269,7 @@ public class PlayerCollectable : MonoBehaviour
 
             TotalCollectedCount--;
 
-            ArcadeManager.Instance.DecreaseResource(1, CollectableType.Type1);
+            ArcadeManager.Instance.DecreaseResource(1, ResourceType.Type1);
 
             GameObject _item = CollectedList[1].objects[i];
             CollectedList[1].objects.Remove(_item);
@@ -276,27 +287,23 @@ public class PlayerCollectable : MonoBehaviour
         StopCoroutine(DelayedGive(Vector3.zero, 0, 0, null));
     }
 
-    public int ReturnTakerTypeIndex(TakerType _takerType)
+    public int ReturnTakerTypeIndex(ResourceType _takerType)
     {
         int _currentResourceIndex = 0;
 
-        if (_takerType == TakerType.Type1)
-        {
-            _currentResourceIndex = 0;
-        }
-        else if (_takerType == TakerType.Type2)
+        if (_takerType == ResourceType.Type1)
         {
             _currentResourceIndex = 1;
         }
-        else if (_takerType == TakerType.Type3)
+        else if (_takerType == ResourceType.Type2)
         {
             _currentResourceIndex = 2;
         }
-        else if (_takerType == TakerType.Type4)
+        else if (_takerType == ResourceType.Type3)
         {
             _currentResourceIndex = 3;
         }
-        else if (_takerType == TakerType.Type5)
+        else if (_takerType == ResourceType.Type4)
         {
             _currentResourceIndex = 4;
         }

@@ -139,4 +139,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Mesh: {fileID: 8209982070092755474}
   targetTag: Player
-  collectableType: 0
+  collectableType: 1

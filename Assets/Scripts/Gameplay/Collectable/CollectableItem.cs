@@ -11,7 +11,7 @@ public class CollectableItem : MonoBehaviour
     [Tag]
     public string targetTag;
 
-    public CollectableType collectableType;
+    public ResourceType collectableType;
 
     private void OnTriggerEnter(Collider other)
     {

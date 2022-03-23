@@ -7,7 +7,7 @@ using DG.Tweening;
 
 public class TreeHealth : MonoBehaviour
 {
-    public CollectableType collectableType;
+    public ResourceType collectableType;
     public FloatVariable maxHealth;
     public float currentHealth;
 

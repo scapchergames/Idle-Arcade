@@ -1,37 +1,49 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+
 using TMPro;
 using DG.Tweening;
-using UnityEngine.Events;
+using Sirenix.OdinInspector;
 
 public class PurchasableItem : MonoBehaviour
 {
     [Tag]
     public string targetTag;
 
-    public PurchasableType purchasableType;
+    [EnumToggleButtons]
+    public ResourceType purchasableType;
 
-    // [ShowOnly]
-    bool isPurchased = false;
+    [Space(20)]
+    [ReadOnly]
+    public bool isPurchased = false;
 
-    public IntVariable Price;
-
-    // [ShowOnly]
+    [ReadOnly]
+    [ProgressBar(0, 15)]
     public int runtimePrice;
-    public BoolVariable showMeshStart;
 
+    [Space(20)]
+    [Required("required")]
+    public IntVariable Price;
+    [Required("required")]
+    public BoolVariable showMeshStart;
+    [Required("required")]
     public MaterialVariable SaleMaterial;
+    [Required("required")]
     public MaterialVariable PurchasedMaterial;
 
+    [Space(20)]
     public GameObject Mesh;
     public TextMeshProUGUI text;
 
+    [Space(20)]
+    [ReadOnly]
+    public ObjectTrigger ObjectTrigger;
+
+    [Space(20)]
     public UnityEvent OnStayEvent;
     public UnityEvent OnPurchasedEvent;
-
-    // [ShowOnly]
-    public ObjectTrigger ObjectTrigger;
 
     private void Start()
     {

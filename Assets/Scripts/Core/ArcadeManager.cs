@@ -28,6 +28,7 @@ public class ArcadeManager : MonoBehaviour
     public ArcadeData ArcadeData;
 
     [Space(20)]
+    public GameObject[] ResourceLabels;
     public Sprite[] ResourceSprites;
     public Image[] ResourceImages;
     public Text[] ResourceTexts;
@@ -55,6 +56,24 @@ public class ArcadeManager : MonoBehaviour
         // OnGameStart Events
     }
 
+    public void CheckLabels()
+    {
+        if (ArcadeData.CurrentResources[ReturnResourceIndex(ResourceType.Type2)].Value > 0)
+        {
+            ResourceLabels[2].SetActive(true);
+        }
+
+        if (ArcadeData.CurrentResources[ReturnResourceIndex(ResourceType.Type3)].Value > 0)
+        {
+            ResourceLabels[3].SetActive(true);
+        }
+
+        if (ArcadeData.CurrentResources[ReturnResourceIndex(ResourceType.Type4)].Value > 0)
+        {
+            ResourceLabels[4].SetActive(true);
+        }
+    }
+
     public void InitializeData()
     {
         for (int i = 0; i < ResourceImages.Length; i++)
@@ -77,23 +96,26 @@ public class ArcadeManager : MonoBehaviour
         CameraController.cameraState = CameraController.cameraStates[1].cameraState;
     }
 
-    public void IncreaseResource(int _amount, CollectableType _collectableType)
+    public void IncreaseResource(int _amount, ResourceType _collectableType)
     {
-        if (_collectableType == CollectableType.Coin)
+        if (_collectableType == ResourceType.Type0)
         {
-            coinsManager.OnCollect(_amount, 1);
+            coinsManager.OnCollect(_amount, ReturnResourceIndex(_collectableType));
         }
         else
         {
-            coinsManager.OnCollect(_amount, 0);
+            coinsManager.OnCollect(_amount, ReturnResourceIndex(_collectableType));
         }
 
         ArcadeData.CurrentResources[ReturnResourceIndex(_collectableType)].Value += _amount;
 
+        Debug.Log(ArcadeData.CurrentResources[ReturnResourceIndex(_collectableType)].Value + "");
+
+        CheckLabels();
         OnUpdateResource();
     }
 
-    public void DecreaseResource(int _amount, CollectableType _collectableType)
+    public void DecreaseResource(int _amount, ResourceType _collectableType)
     {
         ArcadeData.CurrentResources[ReturnResourceIndex(_collectableType)].Value -= _amount;
 
@@ -115,27 +137,27 @@ public class ArcadeManager : MonoBehaviour
     }
     */
 
-    public int ReturnResourceIndex(CollectableType _collectableType)
+    public int ReturnResourceIndex(ResourceType _collectableType)
     {
         int _currentResourceIndex = 0;
 
-        if (_collectableType == CollectableType.Type1)
+        if (_collectableType == ResourceType.Type1)
         {
             _currentResourceIndex = 1;
         }
-        else if (_collectableType == CollectableType.Type2)
+        else if (_collectableType == ResourceType.Type2)
         {
             _currentResourceIndex = 2;
         }
-        else if (_collectableType == CollectableType.Type3)
+        else if (_collectableType == ResourceType.Type3)
         {
             _currentResourceIndex = 3;
         }
-        else if (_collectableType == CollectableType.Type4)
+        else if (_collectableType == ResourceType.Type4)
         {
             _currentResourceIndex = 4;
         }
-        else if (_collectableType == CollectableType.Coin)
+        else if (_collectableType == ResourceType.Type0)
         {
             _currentResourceIndex = 0;
         }

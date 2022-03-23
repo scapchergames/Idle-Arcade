@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+using TMPro;
+using DG.Tweening;
+using Sirenix.OdinInspector;
+
 public class ObjectTrigger : MonoBehaviour
 {
     [Tag]
@@ -10,6 +14,7 @@ public class ObjectTrigger : MonoBehaviour
 
     public UnityEvent TriggerExit, TriggerEnter, TriggerStay;
 
+    [ReadOnly]
     public GameObject triggeredObject;
 
     private void OnTriggerExit(Collider other)

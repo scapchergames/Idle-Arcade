@@ -21,7 +21,7 @@ public class OnResourceCollect : MonoBehaviour
 
     [Header("Resource")]
     [Space(20)]
-    public Transform resourceTargetPosition;
+    public Transform[] resourceTargetPositions;
     public Sprite resourceSprite;
 
     [Header("Coin")]
@@ -51,7 +51,7 @@ public class OnResourceCollect : MonoBehaviour
 
     public void SetAsResource()
     {
-        targetPosition = resourceTargetPosition;
+        // targetPosition = resourceTargetPositions[0];
         for (int i = 0; i < maxAmount; i++)
         {
             resourceList[i].GetComponent<Image>().sprite = resourceSprite;
@@ -71,11 +71,12 @@ public class OnResourceCollect : MonoBehaviour
     {
         if (_whichOne == 0)
         {
-            SetAsResource();
-        }
-        else if (_whichOne == 1)
-        {
             SetAsCoin();
+        }
+        else if (_whichOne > 0)
+        {
+            targetPosition = resourceTargetPositions[_whichOne - 1];
+            SetAsResource();
         }
 
         ResourceParent.SetActive(true);
